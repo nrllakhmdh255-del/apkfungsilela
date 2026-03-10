@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Aplikasi Fungsi Matematika Lengkap</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; display: flex; justify-content: center; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 700px; }
+        .grid-input { display: flex; gap: 10px; margin-bottom: 15px; }
+        select, input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        .result-box { margin-top: 20px; padding: 15px; background: #f8f9fa; border-left: 5px solid #007bff; border-radius: 5px; line-height: 1.6; }
+        .chart-container { margin-top: 20px; height: 350px; }
+        h2 { text-align: center; color: #333; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Kalkulator Fungsi & Grafik</h2>
+    
+    <label>Pilih Jenis Fungsi:</label>
+    <select id="jenisFungsi" onchange="resetAndPrepare()">
+        <option value="linear">Fungsi Linear (f(x) = ax + b)</option>
+        <option value="konstan">Fungsi Konstan (f(x) = c)</option>
+        <option value="identitas">Fungsi Identitas (f(x) = x)</option>
+        <option value="kuadrat">Fungsi Kuadrat (f(x) = ax² + bx + c)</option>
+    </select>
+
+    <div id="inputs" class="grid-input"></div>
+
+    <button onclick="prosesSemua()">Hitung & Gambar Grafik</button>
+
+    <div id="hasilPerhitungan" class="result-box" style="display:none;">
+        </div>
+
+    <div class="chart-container">
+        <canvas id="myChart"></canvas>
+    </div>
+</div>
+
+<script>
+let myChart = null;
+
+function resetAndPrepare() {
+    const jenis = document.getElementById('jenisFungsi').value;
+    const container = document.getElementById('inputs');
+    container.innerHTML = '';
+
+    if (jenis === 'linear') {
+        container.innerHTML = '<input type="number" id="valA" placeholder="Nilai a (Gradien)">' +
+                             '<input type="number" id="valB" placeholder="Nilai b (Intersep Y)">';
+    } else if (jenis === 'konstan') {
+        container.innerHTML = '<input type="number" id="valC" placeholder="Nilai konstanta c">';
+    } else if (jenis === 'kuadrat') {
+        container.innerHTML = '<input type="number" id="valA" placeholder="Nilai a">' +
+                             '<input type="number" id="valB" placeholder="Nilai b">' +
+                             '<input type="number" id="valC" placeholder="Nilai c">';
+    } else {
+        container.innerHTML = '<p>Fungsi Identitas tidak memerlukan parameter tambahan.</p>';
+    }
+}
+
+function prosesSemua() {
+    const jenis = document.getElementById('jenisFungsi').value;
+    const resBox = document.getElementById('hasilPerhitungan');
+    resBox.style.display = 'block';
+    
+    let xData = [], yData = [];
+    let analisis = "";
+
+    // Logika Perhitungan & Analisis
+    if (jenis === 'linear') {
+        let a = parseFloat(document.getElementById('valA').value) || 0;
+        let b = parseFloat(document.getElementById('valB').value) || 0;
+        let titikX = (a !== 0) ? (-b / a).toFixed(2) : "Tidak ada";
+        
+        analisis = `<b>Persamaan:</b> f(x) = ${a}x + ${b}<br>` +
+                   `<b>Titik Potong Sumbu Y:</b> (0, ${b})<br>` +
+                   `<b>Titik Potong Sumbu X:</b> (${titikX}, 0)<br>` +
+                   `<b>Kemiringan (Gradien):</b> ${a}`;
+        
+        for(let x=-10; x<=10; x++) { xData.push(x); yData.push(a*x + b); }
+
+    } else if (jenis === 'konstan') {
+        let c = parseFloat(document.getElementById('valC').value) || 0;
+        analisis = `<b>Persamaan:</b> f(x) = ${c}<br>` +
+                   `<b>Keterangan:</b> Grafik berupa garis horizontal. Nilai f(x) selalu ${c}.`;
+        
+        for(let x=-10; x<=10; x++) { xData.push(x); yData.push(c); }
+
+    } else if (jenis === 'identitas') {
+        analisis = `<b>Persamaan:</b> f(x) = x<br>` +
+                   `<b>Keterangan:</b> Setiap input menghasilkan output yang sama. Sudut kemiringan 45°.`;
+        
+        for(let x=-10; x<=10; x++) { xData.push(x); yData.push(x); }
+
+    } else if (jenis === 'kuadrat') {
+        let a = parseFloat(document.getElementById('valA').value) || 0;
+        let b = parseFloat(document.getElementById('valB').value) || 0;
+        let c = parseFloat(document.getElementById('valC').value) || 0;
+        
+        // Hitung Titik Puncak (Vertex)
+        let xp = -b / (2 * a);
+        let yp = (a * (xp**2)) + (b * xp) + c;
+        let d = (b**2) - (4 * a * c);
+
+        analisis = `<b>Persamaan:</b> f(x) = ${a}x² + ${b}x + ${c}<br>` +
+                   `<b>Diskriminan (D):</b> ${d}<br>` +
+                   `<b>Titik Puncak:</b> (${xp.toFixed(2)}, ${yp.toFixed(2)})<br>` +
+                   `<b>Bentuk:</b> Parabola terbuka ke ${(a > 0) ? 'Atas' : 'Bawah'}`;
+        
+        for(let x=-10; x<=10; x+=0.5) { xData.push(x); yData.push(a*(x**2) + b*x + c); }
+    }
+
+    resBox.innerHTML = analisis;
+    renderChart(xData, yData);
+}
+
+function renderChart(xLabels, yData) {
+    const ctx = document.getElementById('myChart').getContext('2d');
+    if (myChart) myChart.destroy();
+
+    myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: xLabels,
+            datasets: [{
+                label: 'Grafik Fungsi',
+                data: yData,
+                borderColor: '#007bff',
+                borderWidth: 3,
+                fill: false,
+                pointRadius: 0, // Agar garis halus tanpa titik
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { grid: { color: '#ccc' }, title: {display: true, text: 'X'} },
+                y: { grid: { color: '#ccc' }, title: {display: true, text: 'f(x)'} }
+            }
+        }
+    });
+}
+
+// Inisialisasi awal
+resetAndPrepare();
+</script>
+
+</body>
+</html>
